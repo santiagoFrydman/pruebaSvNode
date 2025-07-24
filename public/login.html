@@ -1,0 +1,15 @@
+<body>
+  <h1>Login</h1>
+  <form method="POST" action="/auth/login">
+    <input type="password" name="password" placeholder="Contraseña" required />
+    <button type="submit">Entrar</button>
+  </form>
+  <div id="error-message" style="color: red; display: none;">Contraseña incorrecta</div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error') === '1') {
+      document.getElementById('error-message').style.display = 'block';
+    }
+  </script>
+</body>

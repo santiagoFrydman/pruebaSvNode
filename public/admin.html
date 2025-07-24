@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Panel de Administración</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f4f4f4;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Mensajes Recibidos</h1>
+  <a href="/auth/logout">Cerrar sesión</a>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Asunto</th>
+        <th>Mensaje</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Los mensajes se insertarán aquí dinámicamente -->
+    </tbody>
+  </table>
+
+  <script>
+    async function cargarMensajes() {
+      try {
+        const response = await fetch('/admin/api/contacto')
+        if (!response.ok) throw new Error('No se pudieron cargar los mensajes')
+
+        const mensajes = await response.json()
+        const tbody = document.querySelector('tbody')
+        tbody.innerHTML = ''
+
+        mensajes.forEach(msg => {
+          const fila = `
+            <tr>
+              <td>${msg.id}</td>
+              <td>${msg.nombre}</td>
+              <td>${msg.correo}</td>
+              <td>${msg.asunto || ''}</td>
+              <td>${msg.mensaje}</td>
+            </tr>
+          `
+          tbody.innerHTML += fila
+        })
+      } catch (err) {
+        console.error('Error al cargar mensajes:', err)
+        document.querySelector('tbody').innerHTML = `
+          <tr><td colspan="5">Error al cargar mensajes</td></tr>
+        `
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', cargarMensajes)
+  </script>
+</body>
+
+</html>
