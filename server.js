@@ -53,7 +53,6 @@ class Server {
     })
 
     // Levantar servidor
-    console.log('Antes de levantar el servidor...');
     const server = app.listen(this.#port, () => {
       console.log(`Servidor escuchando en http://localhost:${this.#port}`);
     });

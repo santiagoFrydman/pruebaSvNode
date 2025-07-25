@@ -1,28 +1,58 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
   <title>Panel de Administración</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    a {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #007BFF;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     }
 
-    th,
-    td {
-      padding: 10px;
+    th, td {
+      padding: 12px;
       border: 1px solid #ddd;
+      text-align: left;
     }
 
     th {
-      background-color: #f4f4f4;
+      background-color: #f1f1f1;
+    }
+
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    .error {
+      color: red;
+      margin-top: 20px;
     }
   </style>
 </head>
-
 <body>
   <h1>Mensajes Recibidos</h1>
   <a href="/auth/logout">Cerrar sesión</a>
@@ -37,8 +67,8 @@
         <th>Mensaje</th>
       </tr>
     </thead>
-    <tbody>
-      <!-- Los mensajes se insertarán aquí dinámicamente -->
+    <tbody id="mensaje-tbody">
+      <tr><td colspan="5">Cargando mensajes...</td></tr>
     </tbody>
   </table>
 
@@ -49,25 +79,29 @@
         if (!response.ok) throw new Error('No se pudieron cargar los mensajes')
 
         const mensajes = await response.json()
-        const tbody = document.querySelector('tbody')
+        const tbody = document.getElementById('mensaje-tbody')
         tbody.innerHTML = ''
 
+        if (mensajes.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">No hay mensajes.</td></tr>'
+          return
+        }
+
         mensajes.forEach(msg => {
-          const fila = `
-            <tr>
-              <td>${msg.id}</td>
-              <td>${msg.nombre}</td>
-              <td>${msg.correo}</td>
-              <td>${msg.asunto || ''}</td>
-              <td>${msg.mensaje}</td>
-            </tr>
+          const fila = document.createElement('tr')
+          fila.innerHTML = `
+            <td>${msg.id}</td>
+            <td>${msg.nombre}</td>
+            <td>${msg.correo}</td>
+            <td>${msg.asunto || ''}</td>
+            <td>${msg.mensaje}</td>
           `
-          tbody.innerHTML += fila
+          tbody.appendChild(fila)
         })
       } catch (err) {
         console.error('Error al cargar mensajes:', err)
-        document.querySelector('tbody').innerHTML = `
-          <tr><td colspan="5">Error al cargar mensajes</td></tr>
+        document.getElementById('mensaje-tbody').innerHTML = `
+          <tr><td colspan="5" class="error">Error al cargar mensajes.</td></tr>
         `
       }
     }
@@ -75,5 +109,4 @@
     window.addEventListener('DOMContentLoaded', cargarMensajes)
   </script>
 </body>
-
 </html>
