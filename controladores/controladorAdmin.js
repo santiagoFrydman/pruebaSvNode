@@ -31,19 +31,21 @@ class ControladorAdmin {
   }
 
   guardarMensaje = async (req, res) => {
-    const { nombre, correo, asunto, mensaje } = req.body
+  const { nombre, correo, asunto, mensaje } = req.body;
 
-    if (!nombre || !correo || !mensaje) {
-      return res.status(400).json({ error: "Campos requeridos incompletos" })
+  try {
+    await this.#servicio.guardarMensaje({ nombre, correo, asunto, mensaje });
+    res.json({ success: true, message: 'Mensaje guardado correctamente' });
+  } catch (error) {
+    // Si el error es de validación (por Joi), respondemos con 400
+    if (error.message && error.message.includes('"')) {
+      return res.status(400).json({ error: error.message }); // Muestra el mensaje de Joi
     }
 
-    try {
-      await this.#servicio.guardarMensaje({ nombre, correo, asunto, mensaje })
-      res.json({ success: true, message: 'Mensaje guardado correctamente' })
-    } catch (error) {
-      res.status(500).json({ error: 'Error al guardar el mensaje' })
-    }
+    // Si es otro error (DB, código, etc.), respondemos con 500
+    console.error('Error al guardar el mensaje:', error);
+    res.status(500).json({ error: 'Error al guardar el mensaje' });
   }
+ }
 }
-
 export default ControladorAdmin
