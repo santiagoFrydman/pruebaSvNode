@@ -10,7 +10,7 @@ import AuthService from './servicios/authService.js'
 import AdminService from './servicios/adminService.js'
 
 import config from './config.js'
-import conectarBase from './databaseConexion.js' // Importamos la función para conectar a la BD
+import conectarBase from './databaseConexion.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -21,13 +21,16 @@ class Server {
   #adminService
   #dbPath
   #db
-  _serverInstance
+  #server
 
   constructor(port = config.PORT, dbPath = config.DB_PATH) {
     this.#port = port 
     this.#dbPath = dbPath // Guardamos el path de la BD para levantarla
+    this.#db = null
     this.#authService = new AuthService()
-    this.#adminService = new AdminService(this.#dbPath)
+    this.#adminService = null
+    this.#server = null
+
   }
 
   start() {
@@ -35,6 +38,7 @@ class Server {
     // CONECTO LA BASE DE DATOS AL SERVICIO USANDO EL PATH CONFIGURABLE
 
     this.#db = conectarBase(this.#dbPath) // Levantamos la BD con el path que se pase
+    this.#adminService = new AdminService(this.#db)
 
     const app = express()
 
@@ -63,11 +67,11 @@ class Server {
     })
 
     // Levantar servidor
-    this._serverInstance = app.listen(this.#port, () => {
+    this.#server = app.listen(this.#port, () => {
       console.log(`Servidor escuchando en http://localhost:${this.#port}`);
     });
 
-    this._serverInstance.on('error', (err) => {
+    this.#server.on('error', (err) => {
       console.error('Error en el servidor:', err.message)
     })
 
@@ -76,8 +80,8 @@ class Server {
 
   async stop() {
     // DETENER SERVIDOR Y CERRAR CONEXIÓN A LA BASE DE DATOS
-    if (this._serverInstance) {
-      await this._serverInstance.close()
+    if (this.#server) {
+      await this.#server.close()
       console.log('Servidor detenido')
     }
 

@@ -1,12 +1,10 @@
-import conectarBase from '../databaseConexion.js'
 import Mensaje from '../modelos/mensaje.js'
 import validarMensaje from './validaciones/mensaje.js'
 
 class AdminService {
   #model
 
-  constructor(dbPath) {
-    const db = conectarBase(dbPath)
+  constructor(db) {
     this.#model = new Mensaje(db)
   }
 
