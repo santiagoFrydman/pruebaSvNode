@@ -4,6 +4,7 @@ dotenv.config()
 
 export default {
   PORT: process.env.PORT || 8000,
-  MODO_PERSISTENCIA: process.env.MODO_PERSISTENCIA || '',
-  SESSION_SECRET: process.env.SESSION_SECRET || 'clave_super_secreta'
+  SESSION_SECRET: process.env.SESSION_SECRET || 'clave_super_secreta',
+  DB_PATH: process.env.DB_PATH || './database.db',
+  DB_PATH_TEST: process.env.DB_PATH_TEST || './database-test.db'
 }

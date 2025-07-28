@@ -29,7 +29,7 @@ describe('*** TEST DEL SERVICIO APIRESTful (ext) ***', () => {
             const mensaje = mensajeFalso.get()
             //console.log(mensaje)
 
-            const response = await request.post('/admin/api/contacto').send(mensaje)
+            const response = await agent.post('/admin/api/contacto').send(mensaje)
             //Se espera que status sea = a 200 y tilda en verde o rojo
             expect(response.status).to.eql(200)
 

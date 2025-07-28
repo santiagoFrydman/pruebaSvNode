@@ -31,6 +31,7 @@ class ControladorAuth {
     req.session.destroy(() => res.redirect('/auth/login'));
   }
 
+  //Login para testiar
   loginTest = async (req, res) => {
   const { password } = req.body;
   const esValido = this.#servicio.validarPassword(password);

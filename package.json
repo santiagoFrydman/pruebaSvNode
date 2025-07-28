@@ -6,8 +6,10 @@
   "type": "module",
   "scripts": {
     "start": "node app.js",
+    "test": " ",
     "test-gen-mensaje": "mocha test/mensaje.test.js --timeout 10000",
-    "test-api-ext": "mocha test/api-ext.test.js --timeout 10000"
+    "test-api-ext": "mocha test/api-ext.test.js --timeout 10000",
+    "test-api-int": "mocha test/api-int.test.js --timeout 10000"
   },
   "keywords": [],
   "author": "",

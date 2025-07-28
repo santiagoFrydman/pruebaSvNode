@@ -10,6 +10,7 @@ import AuthService from './servicios/authService.js'
 import AdminService from './servicios/adminService.js'
 
 import config from './config.js'
+import conectarBase from './databaseConexion.js' // Importamos la función para conectar a la BD
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -18,14 +19,23 @@ class Server {
   #port
   #authService
   #adminService
+  #dbPath
+  #db
+  _serverInstance
 
-  constructor(port = config.PORT) {
-    this.#port = port
+  constructor(port = config.PORT, dbPath = config.DB_PATH) {
+    this.#port = port 
+    this.#dbPath = dbPath // Guardamos el path de la BD para levantarla
     this.#authService = new AuthService()
-    this.#adminService = new AdminService()
+    this.#adminService = new AdminService(this.#dbPath)
   }
 
   start() {
+
+    // CONECTO LA BASE DE DATOS AL SERVICIO USANDO EL PATH CONFIGURABLE
+
+    this.#db = conectarBase(this.#dbPath) // Levantamos la BD con el path que se pase
+
     const app = express()
 
     // Middlewares para parsing
@@ -53,14 +63,33 @@ class Server {
     })
 
     // Levantar servidor
-    const server = app.listen(this.#port, () => {
+    this._serverInstance = app.listen(this.#port, () => {
       console.log(`Servidor escuchando en http://localhost:${this.#port}`);
     });
 
-
-    server.on('error', (err) => {
+    this._serverInstance.on('error', (err) => {
       console.error('Error en el servidor:', err.message)
     })
+
+    return app
+  }
+
+  async stop() {
+    // DETENER SERVIDOR Y CERRAR CONEXIÓN A LA BASE DE DATOS
+    if (this._serverInstance) {
+      await this._serverInstance.close()
+      console.log('Servidor detenido')
+    }
+
+    if (this.#db) {
+      this.#db.close((err) => {
+        if (err) {
+          console.error('Error al cerrar la base de datos SQLite:', err.message)
+        } else {
+          console.log('Conexión SQLite cerrada.')
+        }
+      })
+    }
   }
 }
 

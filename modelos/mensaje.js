@@ -1,9 +1,11 @@
-import db from '../databaseConexion.js'
-
 class Mensaje {
+  constructor(db) {
+    this.db = db
+  }
+
   obtenerTodos() {
     return new Promise((resolve, reject) => {
-      db.all('SELECT * FROM mensajes ORDER BY id DESC', [], (err, rows) => {
+      this.db.all('SELECT * FROM mensajes ORDER BY id DESC', [], (err, rows) => {
         if (err) reject(err)
         else resolve(rows)
       })
@@ -12,12 +14,18 @@ class Mensaje {
 
   crear({ nombre, correo, asunto, mensaje }) {
     return new Promise((resolve, reject) => {
-      db.run(`
+      this.db.run(`
         INSERT INTO mensajes (nombre, correo, asunto, mensaje)
         VALUES (?, ?, ?, ?)
       `, [nombre, correo, asunto, mensaje], function(err) {
         if (err) reject(err)
-        else resolve(this.lastID)
+        else resolve({
+          id: this.lastID,
+          nombre,
+          correo,
+          asunto,
+          mensaje
+        })
       })
     })
   }
