@@ -14,6 +14,9 @@ class RouterAuth {
     router.get('/login', this.#controlador.renderLogin)
     router.post('/login', this.#controlador.login)
     router.get('/logout', this.#controlador.logout)
+    //Ruta para test
+    router.post('/login-test', this.#controlador.loginTest)
+
 
     return router
   }

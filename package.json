@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node app.js",
-    "test-gen-mensaje": "mocha test/mensaje.test.js --timeout 10000"
+    "test-gen-mensaje": "mocha test/mensaje.test.js --timeout 10000",
+    "test-api-ext": "mocha test/api-ext.test.js --timeout 10000"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
     "joi": "^17.13.3",
     "mocha": "^11.7.1",
     "npm": "^11.4.2",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "supertest": "^7.1.4"
   }
 }
