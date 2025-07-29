@@ -2,6 +2,8 @@ import express from 'express'
 import session from 'express-session'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import cors from 'cors'
+
 
 import RouterAuth from './rutas/routerAuth.js'
 import RouterAdmin from './rutas/routerAdmin.js'
@@ -45,6 +47,11 @@ class Server {
     // Middlewares para parsing
     app.use(express.urlencoded({ extended: false }))
     app.use(express.json())
+
+    //Middleware para cors
+    app.use(cors({
+    origin: 'https://templado1.netlify.app',
+    credentials: true }))
 
     // Archivos estáticos
     app.use(express.static(path.join(__dirname, 'public')))
