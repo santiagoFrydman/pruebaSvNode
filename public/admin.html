@@ -69,6 +69,10 @@
       align-items: center;
     }
 
+    .acciones button {
+      margin-left: 10px;
+    }
+
     button {
       padding: 10px 16px;
       font-size: 14px;
@@ -89,7 +93,10 @@
 
   <div class="acciones">
     <a href="/auth/logout">Cerrar sesión</a>
-    <button onclick="exportarCSV()">⬇️ Exportar CSV</button>
+    <div>
+      <button onclick="exportarCSV()">⬇️ Exportar CSV</button>
+      <button onclick="exportarJSON()">⬇️ Exportar JSON</button>
+    </div>
   </div>
 
   <input type="text" id="busqueda" class="busqueda" placeholder="Buscar por nombre, correo, asunto o mensaje..." />
@@ -111,6 +118,7 @@
 
   <script>
     let mensajesOriginales = []
+    let mensajesFiltrados = []
     let ordenActual = { campo: 'id', asc: false }
 
     async function cargarMensajes() {
@@ -118,7 +126,8 @@
         const response = await fetch('/admin/api/contacto')
         if (!response.ok) throw new Error('No se pudieron cargar los mensajes')
         mensajesOriginales = await response.json()
-        mostrarMensajes(mensajesOriginales)
+        mensajesFiltrados = [...mensajesOriginales]
+        mostrarMensajes(mensajesFiltrados)
       } catch (err) {
         console.error('Error al cargar mensajes:', err)
         document.getElementById('mensaje-tbody').innerHTML = `
@@ -150,13 +159,13 @@
 
     document.getElementById('busqueda').addEventListener('input', (e) => {
       const texto = e.target.value.toLowerCase()
-      const filtrados = mensajesOriginales.filter(msg =>
+      mensajesFiltrados = mensajesOriginales.filter(msg =>
         msg.nombre.toLowerCase().includes(texto) ||
         msg.correo.toLowerCase().includes(texto) ||
         (msg.asunto && msg.asunto.toLowerCase().includes(texto)) ||
         msg.mensaje.toLowerCase().includes(texto)
       )
-      mostrarMensajes(filtrados)
+      mostrarMensajes(mensajesFiltrados)
     })
 
     function ordenarPor(campo) {
@@ -166,7 +175,7 @@
         ordenActual = { campo, asc: true }
       }
 
-      const mensajesOrdenados = [...mensajesOriginales].sort((a, b) => {
+      mensajesFiltrados.sort((a, b) => {
         const valorA = a[campo] || ''
         const valorB = b[campo] || ''
         return ordenActual.asc
@@ -174,14 +183,14 @@
           : valorB.toString().localeCompare(valorA.toString(), undefined, { numeric: true })
       })
 
-      mostrarMensajes(mensajesOrdenados)
+      mostrarMensajes(mensajesFiltrados)
     }
 
     function exportarCSV() {
-      if (!mensajesOriginales.length) return alert('No hay mensajes para exportar.')
+      if (!mensajesFiltrados.length) return alert('No hay mensajes para exportar.')
 
       const encabezados = ['ID', 'Nombre', 'Correo', 'Asunto', 'Mensaje']
-      const filas = mensajesOriginales.map(m =>
+      const filas = mensajesFiltrados.map(m =>
         [m.id, m.nombre, m.correo, m.asunto || '', m.mensaje]
       )
       const contenido = [encabezados, ...filas].map(f => f.map(valor =>
@@ -192,6 +201,18 @@
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
       link.download = 'mensajes.csv'
+      link.click()
+    }
+
+    function exportarJSON() {
+      if (!mensajesFiltrados.length) return alert('No hay mensajes para exportar.')
+
+      const blob = new Blob([JSON.stringify(mensajesFiltrados, null, 2)], {
+        type: 'application/json'
+      })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = 'mensajes.json'
       link.click()
     }
 
