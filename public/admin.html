@@ -26,6 +26,15 @@
       text-decoration: underline;
     }
 
+    .busqueda {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -41,6 +50,7 @@
 
     th {
       background-color: #f1f1f1;
+      cursor: pointer;
     }
 
     tr:hover {
@@ -51,20 +61,47 @@
       color: red;
       margin-top: 20px;
     }
+
+    .acciones {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    button {
+      padding: 10px 16px;
+      font-size: 14px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
   <h1>Mensajes Recibidos</h1>
-  <a href="/auth/logout">Cerrar sesión</a>
+
+  <div class="acciones">
+    <a href="/auth/logout">Cerrar sesión</a>
+    <button onclick="exportarCSV()">⬇️ Exportar CSV</button>
+  </div>
+
+  <input type="text" id="busqueda" class="busqueda" placeholder="Buscar por nombre, correo, asunto o mensaje..." />
 
   <table>
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Nombre</th>
-        <th>Correo</th>
-        <th>Asunto</th>
-        <th>Mensaje</th>
+        <th onclick="ordenarPor('id')">ID</th>
+        <th onclick="ordenarPor('nombre')">Nombre</th>
+        <th onclick="ordenarPor('correo')">Correo</th>
+        <th onclick="ordenarPor('asunto')">Asunto</th>
+        <th onclick="ordenarPor('mensaje')">Mensaje</th>
       </tr>
     </thead>
     <tbody id="mensaje-tbody">
@@ -73,37 +110,89 @@
   </table>
 
   <script>
+    let mensajesOriginales = []
+    let ordenActual = { campo: 'id', asc: false }
+
     async function cargarMensajes() {
       try {
         const response = await fetch('/admin/api/contacto')
         if (!response.ok) throw new Error('No se pudieron cargar los mensajes')
-
-        const mensajes = await response.json()
-        const tbody = document.getElementById('mensaje-tbody')
-        tbody.innerHTML = ''
-
-        if (mensajes.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5">No hay mensajes.</td></tr>'
-          return
-        }
-
-        mensajes.forEach(msg => {
-          const fila = document.createElement('tr')
-          fila.innerHTML = `
-            <td>${msg.id}</td>
-            <td>${msg.nombre}</td>
-            <td>${msg.correo}</td>
-            <td>${msg.asunto || ''}</td>
-            <td>${msg.mensaje}</td>
-          `
-          tbody.appendChild(fila)
-        })
+        mensajesOriginales = await response.json()
+        mostrarMensajes(mensajesOriginales)
       } catch (err) {
         console.error('Error al cargar mensajes:', err)
         document.getElementById('mensaje-tbody').innerHTML = `
           <tr><td colspan="5" class="error">Error al cargar mensajes.</td></tr>
         `
       }
+    }
+
+    function mostrarMensajes(mensajes) {
+      const tbody = document.getElementById('mensaje-tbody')
+      tbody.innerHTML = ''
+      if (mensajes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">No hay mensajes.</td></tr>'
+        return
+      }
+
+      mensajes.forEach(msg => {
+        const fila = document.createElement('tr')
+        fila.innerHTML = `
+          <td>${msg.id}</td>
+          <td>${msg.nombre}</td>
+          <td>${msg.correo}</td>
+          <td>${msg.asunto || ''}</td>
+          <td>${msg.mensaje}</td>
+        `
+        tbody.appendChild(fila)
+      })
+    }
+
+    document.getElementById('busqueda').addEventListener('input', (e) => {
+      const texto = e.target.value.toLowerCase()
+      const filtrados = mensajesOriginales.filter(msg =>
+        msg.nombre.toLowerCase().includes(texto) ||
+        msg.correo.toLowerCase().includes(texto) ||
+        (msg.asunto && msg.asunto.toLowerCase().includes(texto)) ||
+        msg.mensaje.toLowerCase().includes(texto)
+      )
+      mostrarMensajes(filtrados)
+    })
+
+    function ordenarPor(campo) {
+      if (ordenActual.campo === campo) {
+        ordenActual.asc = !ordenActual.asc
+      } else {
+        ordenActual = { campo, asc: true }
+      }
+
+      const mensajesOrdenados = [...mensajesOriginales].sort((a, b) => {
+        const valorA = a[campo] || ''
+        const valorB = b[campo] || ''
+        return ordenActual.asc
+          ? valorA.toString().localeCompare(valorB.toString(), undefined, { numeric: true })
+          : valorB.toString().localeCompare(valorA.toString(), undefined, { numeric: true })
+      })
+
+      mostrarMensajes(mensajesOrdenados)
+    }
+
+    function exportarCSV() {
+      if (!mensajesOriginales.length) return alert('No hay mensajes para exportar.')
+
+      const encabezados = ['ID', 'Nombre', 'Correo', 'Asunto', 'Mensaje']
+      const filas = mensajesOriginales.map(m =>
+        [m.id, m.nombre, m.correo, m.asunto || '', m.mensaje]
+      )
+      const contenido = [encabezados, ...filas].map(f => f.map(valor =>
+        `"${(valor || '').toString().replace(/"/g, '""')}"`
+      ).join(',')).join('\n')
+
+      const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = 'mensajes.csv'
+      link.click()
     }
 
     window.addEventListener('DOMContentLoaded', cargarMensajes)
