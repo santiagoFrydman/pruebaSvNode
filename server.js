@@ -4,7 +4,6 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import cors from 'cors'
 
-
 import RouterAuth from './rutas/routerAuth.js'
 import RouterAdmin from './rutas/routerAdmin.js'
 
