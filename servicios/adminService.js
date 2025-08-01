@@ -4,8 +4,8 @@ import validarMensaje from './validaciones/mensaje.js'
 class AdminService {
   #model
 
-  constructor(db) {
-    this.#model = new Mensaje(db)
+  constructor(model) {
+    this.#model = model
   }
 
   obtenerMensajes() {

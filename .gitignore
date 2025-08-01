@@ -15,5 +15,5 @@ yarn-error.log*
 Thumbs.db
 
 # Base de Datos
-#database.db
-#database-test.db
+database.db
+database-test.db

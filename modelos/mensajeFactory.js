@@ -1,18 +1,19 @@
-// modelos/MensajeFactory.js
+import config from '../config.js'
+import conectarBase from '../databaseConexion.js'
+import CnxMongoDB from '../CnxMongoDB.js'
 import Mensaje from './mensaje.js'
 import MensajeMongo from './mensajeMongo.js'
-import conectarBase from '../databaseConexion.js'
-//import CnxMongoDB from '../databaseMongo/CnxMongoDB.js'
-import config from '../config.js'
 
-async function getMensajeModel() {
-  if (config.PERSISTENCIA === 'MONGO') {
-    await CnxMongoDB.conectar()
-    return new MensajeMongo()
-  } else {
-    const db = conectarBase()
-    return new Mensaje(db)
+class MensajeFactory {
+  static async get() {
+    if (config.PERSISTENCIA === 'MONGO') {
+      await CnxMongoDB.conectar()
+      return { modelo: new MensajeMongo(), conexion: null }
+    } else {
+      const db = conectarBase(config.DB_PATH)
+      return { modelo: new Mensaje(db), conexion: db }
+    }
   }
 }
 
-export default getMensajeModel
+export default MensajeFactory

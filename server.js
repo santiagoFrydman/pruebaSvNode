@@ -4,7 +4,6 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import cors from 'cors'
 
-
 import RouterAuth from './rutas/routerAuth.js'
 import RouterAdmin from './rutas/routerAdmin.js'
 
@@ -12,7 +11,8 @@ import AuthService from './servicios/authService.js'
 import AdminService from './servicios/adminService.js'
 
 import config from './config.js'
-import conectarBase from './databaseConexion.js'
+import MensajeModel from './modelos/mensajeFactory.js'
+import CnxMongoDB from './CnxMongoDB.js'  // Para desconectar Mongo
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -26,21 +26,19 @@ class Server {
   #server
 
   constructor(port = config.PORT, dbPath = config.DB_PATH) {
-    this.#port = port 
-    this.#dbPath = dbPath // Guardamos el path de la BD para levantarla
+    this.#port = port
+    this.#dbPath = dbPath
     this.#db = null
     this.#authService = new AuthService()
     this.#adminService = null
     this.#server = null
-
   }
 
-  start() {
-
-    // CONECTO LA BASE DE DATOS AL SERVICIO USANDO EL PATH CONFIGURABLE
-
-    this.#db = conectarBase(this.#dbPath) // Levantamos la BD con el path que se pase
-    this.#adminService = new AdminService(this.#db)
+  async start() {
+    // Usamos el factory que devuelve { modelo, conexion }
+    const { modelo, conexion } = await MensajeModel.get()
+    this.#adminService = new AdminService(modelo)
+    this.#db = conexion  // Será null si es Mongo
 
     const app = express()
 
@@ -48,10 +46,11 @@ class Server {
     app.use(express.urlencoded({ extended: false }))
     app.use(express.json())
 
-    //Middleware para cors
+    // Middleware para cors
     app.use(cors({
-    origin: 'https://templado1.netlify.app',
-    credentials: true }))
+      origin: 'https://templado1.netlify.app',
+      credentials: true
+    }))
 
     // Archivos estáticos
     app.use(express.static(path.join(__dirname, 'public')))
@@ -75,8 +74,13 @@ class Server {
 
     // Levantar servidor
     this.#server = app.listen(this.#port, () => {
-      console.log(`Servidor escuchando en http://localhost:${this.#port}`);
-    });
+      console.log(`Servidor escuchando en http://localhost:${this.#port}`)
+      if (config.PERSISTENCIA === 'SQL') {
+        console.log(`Conectado a SQLite en: ${this.#dbPath}`)
+      } else {
+        console.log(`Conectado a MongoDB en: ${config.MONGO_URI}`)
+      }
+    })
 
     this.#server.on('error', (err) => {
       console.error('Error en el servidor:', err.message)
@@ -86,20 +90,25 @@ class Server {
   }
 
   async stop() {
-    // DETENER SERVIDOR Y CERRAR CONEXIÓN A LA BASE DE DATOS
     if (this.#server) {
-      await this.#server.close()
+      await new Promise(resolve => this.#server.close(resolve))
       console.log('Servidor detenido')
     }
 
     if (this.#db) {
-      this.#db.close((err) => {
-        if (err) {
-          console.error('Error al cerrar la base de datos SQLite:', err.message)
-        } else {
-          console.log('Conexión SQLite cerrada.')
-        }
+      // Promisificar el cierre para usar await
+      await new Promise((resolve, reject) => {
+        this.#db.close(err => {
+          if (err) reject(err)
+          else resolve()
+        })
       })
+      console.log('Conexión SQLite cerrada.')
+    }
+
+    if (config.PERSISTENCIA === 'MONGO') {
+      await CnxMongoDB.desconectar()
+      console.log('Conexión MongoDB cerrada.')
     }
   }
 }
