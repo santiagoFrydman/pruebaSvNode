@@ -69,10 +69,6 @@
       align-items: center;
     }
 
-    .acciones button {
-      margin-left: 10px;
-    }
-
     button {
       padding: 10px 16px;
       font-size: 14px;
@@ -81,9 +77,24 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      margin-left: 10px;
     }
 
     button:hover {
+      background-color: #0056b3;
+    }
+
+    .paginacion {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .paginacion button {
+      margin: 0 4px;
+      padding: 6px 12px;
+    }
+
+    .paginacion .activo {
       background-color: #0056b3;
     }
   </style>
@@ -99,7 +110,7 @@
     </div>
   </div>
 
-  <input type="text" id="busqueda" class="busqueda" placeholder="Buscar por nombre, correo, asunto o mensaje..." />
+  <input type="text" id="busqueda" class="busqueda" placeholder="Buscar por nombre, correo o asunto..." />
 
   <table>
     <thead>
@@ -108,7 +119,7 @@
         <th onclick="ordenarPor('nombre')">Nombre</th>
         <th onclick="ordenarPor('correo')">Correo</th>
         <th onclick="ordenarPor('asunto')">Asunto</th>
-        <th onclick="ordenarPor('mensaje')">Mensaje</th>
+        <th>Mensaje</th>
       </tr>
     </thead>
     <tbody id="mensaje-tbody">
@@ -116,10 +127,14 @@
     </tbody>
   </table>
 
+  <div class="paginacion" id="paginacion"></div>
+
   <script>
     let mensajesOriginales = []
     let mensajesFiltrados = []
     let ordenActual = { campo: 'id', asc: false }
+    let paginaActual = 1
+    const POR_PAGINA = 50
 
     async function cargarMensajes() {
       try {
@@ -127,7 +142,7 @@
         if (!response.ok) throw new Error('No se pudieron cargar los mensajes')
         mensajesOriginales = await response.json()
         mensajesFiltrados = [...mensajesOriginales]
-        mostrarMensajes(mensajesFiltrados)
+        mostrarMensajes()
       } catch (err) {
         console.error('Error al cargar mensajes:', err)
         document.getElementById('mensaje-tbody').innerHTML = `
@@ -136,15 +151,20 @@
       }
     }
 
-    function mostrarMensajes(mensajes) {
+    function mostrarMensajes() {
       const tbody = document.getElementById('mensaje-tbody')
       tbody.innerHTML = ''
-      if (mensajes.length === 0) {
+
+      const inicio = (paginaActual - 1) * POR_PAGINA
+      const fin = inicio + POR_PAGINA
+      const paginaMensajes = mensajesFiltrados.slice(inicio, fin)
+
+      if (paginaMensajes.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5">No hay mensajes.</td></tr>'
         return
       }
 
-      mensajes.forEach(msg => {
+      paginaMensajes.forEach(msg => {
         const fila = document.createElement('tr')
         fila.innerHTML = `
           <td>${msg.id}</td>
@@ -155,18 +175,26 @@
         `
         tbody.appendChild(fila)
       })
+
+      actualizarPaginacion()
     }
 
-    document.getElementById('busqueda').addEventListener('input', (e) => {
-      const texto = e.target.value.toLowerCase()
-      mensajesFiltrados = mensajesOriginales.filter(msg =>
-        msg.nombre.toLowerCase().includes(texto) ||
-        msg.correo.toLowerCase().includes(texto) ||
-        (msg.asunto && msg.asunto.toLowerCase().includes(texto)) ||
-        msg.mensaje.toLowerCase().includes(texto)
-      )
-      mostrarMensajes(mensajesFiltrados)
-    })
+    function actualizarPaginacion() {
+      const totalPaginas = Math.ceil(mensajesFiltrados.length / POR_PAGINA)
+      const contenedor = document.getElementById('paginacion')
+      contenedor.innerHTML = ''
+
+      for (let i = 1; i <= totalPaginas; i++) {
+        const btn = document.createElement('button')
+        btn.textContent = i
+        if (i === paginaActual) btn.classList.add('activo')
+        btn.addEventListener('click', () => {
+          paginaActual = i
+          mostrarMensajes()
+        })
+        contenedor.appendChild(btn)
+      }
+    }
 
     function ordenarPor(campo) {
       if (ordenActual.campo === campo) {
@@ -183,8 +211,24 @@
           : valorB.toString().localeCompare(valorA.toString(), undefined, { numeric: true })
       })
 
-      mostrarMensajes(mensajesFiltrados)
+      paginaActual = 1
+      mostrarMensajes()
     }
+
+    let timeout = null
+    document.getElementById('busqueda').addEventListener('input', (e) => {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        const texto = e.target.value.toLowerCase()
+        mensajesFiltrados = mensajesOriginales.filter(msg =>
+          msg.nombre.toLowerCase().includes(texto) ||
+          msg.correo.toLowerCase().includes(texto) ||
+          (msg.asunto && msg.asunto.toLowerCase().includes(texto))
+        )
+        paginaActual = 1
+        mostrarMensajes()
+      }, 300)
+    })
 
     function exportarCSV() {
       if (!mensajesFiltrados.length) return alert('No hay mensajes para exportar.')
