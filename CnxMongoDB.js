@@ -10,7 +10,6 @@ class CnxMongoDB {
         useNewUrlParser: true,
         useUnifiedTopology: true,
       })
-      console.log('🟢 Conectado a MongoDB en', config.MONGO_URI)
       this.connectionOK = true
     } catch (err) {
       console.error('🔴 Error al conectar a MongoDB:', err.message)
